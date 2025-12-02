@@ -1,0 +1,2 @@
+Flask
+gunicorn # Used as the production-ready WSGI server

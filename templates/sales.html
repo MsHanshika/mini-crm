@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mini CRM</title>
+</head>
+<body>
+{% extends "base.html" %}
+
+{% block title %}Sales Tracking{% endblock %}
+
+{% block content %}
+    <!-- SALES STATS -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+        <div class="bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl p-6 text-white shadow-lg">
+            <div class="flex items-center gap-3 mb-2 opacity-90">
+                <i data-lucide="dollar-sign" class="w-5 h-5"></i>
+                <span class="font-medium text-sm">Total Revenue (Completed)</span>
+            </div>
+            <p class="text-3xl font-bold">${{ "{:,.2f}".format(total_sales) }}</p>
+        </div>
+        
+        <div class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+             <div class="flex items-center gap-3 mb-2 text-slate-500">
+                <i data-lucide="clock" class="w-5 h-5"></i>
+                <span class="font-medium text-sm">Pending Sales Value</span>
+            </div>
+            <p class="text-3xl font-bold text-slate-800">${{ "{:,.2f}".format(pending_sales) }}</p>
+        </div>
+    </div>
+
+    <!-- HEADER with Log Sale Button -->
+    <div class="flex justify-between items-center mb-4">
+        <h3 class="text-lg font-bold text-slate-800">Recent Transactions</h3>
+        <button onclick="document.getElementById('saleModal').classList.remove('hidden')"
+                class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors shadow-sm">
+            <i data-lucide="plus" class="w-4 h-4"></i>
+            Log New Sale
+        </button>
+    </div>
+
+    <!-- TRANSACTIONS TABLE -->
+    <div class="bg-white rounded-xl border border-gray-200 shadow-sm flex flex-col">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left">
+                <thead>
+                    <tr class="bg-gray-50 text-xs uppercase text-gray-500 font-semibold border-b border-gray-100">
+                        <th class="px-6 py-4">Transaction ID</th>
+                        <th class="px-6 py-4">Customer</th>
+                        <th class="px-6 py-4">Date</th>
+                        <th class="px-6 py-4">Status</th>
+                        <th class="px-6 py-4 text-right">Amount</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                    {% for sale in sales %}
+                    <tr class="hover:bg-gray-50 transition-colors">
+                        <td class="px-6 py-4 text-sm font-mono text-slate-500">#{{ sale.id }}</td>
+                        <td class="px-6 py-4 font-medium text-slate-900">{{ sale.customer }}</td>
+                        <td class="px-6 py-4 text-sm text-slate-500">{{ sale.date }}</td>
+                        <td class="px-6 py-4">
+                            <span class="px-2.5 py-1 rounded-full text-xs font-medium 
+                            {{ 'bg-emerald-100 text-emerald-700' if sale.status == 'Completed' else 'bg-amber-100 text-amber-700' }}">
+                                {{ sale.status }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 text-right font-bold text-slate-700">
+                            ${{ "{:,.2f}".format(sale.amount) }}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- LOG SALE MODAL -->
+    <div id="saleModal" class="fixed inset-0 bg-gray-900 bg-opacity-75 hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-md">
+            <div class="p-6 border-b border-gray-100 flex justify-between items-center">
+                <h4 class="text-xl font-bold text-slate-800">Log New Sale</h4>
+                <button onclick="document.getElementById('saleModal').classList.add('hidden')" class="text-gray-400 hover:text-gray-600">
+                    <i data-lucide="x" class="w-6 h-6"></i>
+                </button>
+            </div>
+            
+            <form action="{{ url_for('add_sale') }}" method="POST" class="p-6">
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-2">Customer</label>
+                        <select name="customer_name" required class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white">
+                            <option value="">Select Customer</option>
+                            {% for c in all_customers %}
+                                <option value="{{ c.name }}">{{ c.name }} ({{ c.company }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-2">Amount ($)</label>
+                        <input type="number" step="0.01" name="amount" required class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="e.g. 1500.00">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-2">Status</label>
+                        <select name="status" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white">
+                            <option value="Completed">Completed</option>
+                            <option value="Pending">Pending</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="mt-6 flex justify-end gap-3">
+                    <button type="button" onclick="document.getElementById('saleModal').classList.add('hidden')" class="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-gray-50 rounded-lg border border-gray-300">
+                        Cancel
+                    </button>
+                    <button type="submit" class="px-6 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm">
+                        Log Sale
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Initialize icons for the modal when the page loads -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            lucide.createIcons();
+        });
+    </script>
+{% endblock %}
+</body>
+</html>

@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mini CRM </title>
+</head>
+<body>
+{% extends "base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+    <!-- STATS CARDS -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <!-- Total Customers -->
+        <div class="bg-white p-6 rounded-xl border border-gray-100 shadow-sm flex items-center gap-4">
+            <div class="w-12 h-12 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center">
+                <i data-lucide="users" class="w-6 h-6"></i>
+            </div>
+            <div>
+                <p class="text-3xl font-bold text-slate-900">{{ stats.total }}</p>
+                <p class="text-sm text-slate-500 font-medium">Total Customers</p>
+            </div>
+        </div>
+
+        <!-- Active Customers -->
+        <div class="bg-white p-6 rounded-xl border border-gray-100 shadow-sm flex items-center gap-4">
+            <div class="w-12 h-12 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                <i data-lucide="check-circle-2" class="w-6 h-6"></i>
+            </div>
+            <div>
+                <p class="text-3xl font-bold text-slate-900">{{ stats.active }}</p>
+                <p class="text-sm text-slate-500 font-medium">Active Customers</p>
+            </div>
+        </div>
+
+        <!-- New This Week -->
+        <div class="bg-white p-6 rounded-xl border border-gray-100 shadow-sm flex items-center gap-4">
+            <div class="w-12 h-12 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
+                <i data-lucide="user-plus" class="w-6 h-6"></i>
+            </div>
+            <div>
+                <p class="text-3xl font-bold text-slate-900">{{ stats.new }}</p>
+                <p class="text-sm text-slate-500 font-medium">New This Week</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- RECENT ACTIVITY SECTION -->
+    <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-bold text-slate-800">Recent Activity</h3>
+        <a href="{{ url_for('customers_list') }}" class="text-sm font-medium text-slate-600 hover:text-indigo-600 border border-gray-300 px-3 py-1.5 rounded-lg bg-white hover:bg-gray-50 transition-colors">
+            View All Customers
+        </a>
+    </div>
+
+    <div class="bg-white rounded-xl border border-gray-200 shadow-sm min-h-[400px] flex flex-col items-center justify-center text-center p-8">
+        {% if customers %}
+            <!-- Simple list if there is data -->
+            <div class="w-full text-left">
+                <table class="w-full">
+                    <thead>
+                        <tr class="text-left text-xs font-semibold text-gray-500 uppercase border-b border-gray-100">
+                            <th class="pb-3 pl-4">Customer</th>
+                            <th class="pb-3">Status</th>
+                            <th class="pb-3">Email</th>
+                            <th class="pb-3">Added</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100">
+                        {% for c in customers[:5] %}
+                        <tr>
+                            <td class="py-3 pl-4 font-medium text-slate-800">{{ c.name }}</td>
+                            <td class="py-3">
+                                <span class="px-2 py-1 text-xs font-medium rounded-full {{ 'bg-emerald-100 text-emerald-700' if c.status == 'Active' else 'bg-gray-100 text-gray-700' }}">
+                                    {{ c.status }}
+                                </span>
+                            </td>
+                            <td class="py-3 text-slate-500 text-sm">{{ c.email }}</td>
+                            <td class="py-3 text-slate-400 text-sm">Just now</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <!-- EMPTY STATE -->
+            <div class="w-16 h-16 bg-gray-50 rounded-2xl flex items-center justify-center mb-4">
+                <i data-lucide="file-text" class="w-8 h-8 text-gray-300"></i>
+            </div>
+            <h4 class="text-lg font-bold text-slate-900 mb-2">No recent activity</h4>
+            <p class="text-slate-500 max-w-sm mb-6">Start by adding customers and logging interactions to see activity here.</p>
+            <a href="{{ url_for('add_customer') }}" class="bg-[#4f46e5] hover:bg-indigo-700 text-white px-6 py-2.5 rounded-lg font-medium transition-colors shadow-sm">
+                Add Your First Customer
+            </a>
+        {% endif %}
+    </div>
+{% endblock %}
+</body>
+</html>

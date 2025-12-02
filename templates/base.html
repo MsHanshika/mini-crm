@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mini CRM</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Chart.js for Graphs -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="bg-gray-50 text-slate-800 flex h-screen overflow-hidden">
+
+    <!-- SIDEBAR -->
+    <aside class="w-64 bg-[#0f172a] text-white flex flex-col flex-shrink-0">
+        <div class="p-6 flex items-center gap-3 border-b border-gray-800">
+            <div class="bg-indigo-600 p-1.5 rounded-lg">
+                <i data-lucide="users" class="w-5 h-5 text-white"></i>
+            </div>
+            <h1 class="font-bold text-lg tracking-tight">Mini CRM</h1>
+        </div>
+
+        <nav class="flex-1 px-3 py-6 space-y-1">
+            <a href="{{ url_for('dashboard') }}" 
+               class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium {{ 'bg-[#4f46e5] text-white shadow-lg shadow-indigo-500/30' if active_page == 'dashboard' else 'text-slate-400 hover:text-white sidebar-link' }}">
+                <i data-lucide="layout-grid" class="w-5 h-5"></i>
+                Dashboard
+            </a>
+            <a href="{{ url_for('customers_list') }}" 
+               class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium {{ 'bg-[#4f46e5] text-white shadow-lg shadow-indigo-500/30' if active_page == 'customers' else 'text-slate-400 hover:text-white sidebar-link' }}">
+                <i data-lucide="users" class="w-5 h-5"></i>
+                Customers
+            </a>
+            <a href="{{ url_for('sales_tracking') }}" 
+               class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium {{ 'bg-[#4f46e5] text-white shadow-lg shadow-indigo-500/30' if active_page == 'sales' else 'text-slate-400 hover:text-white sidebar-link' }}">
+                <i data-lucide="banknote" class="w-5 h-5"></i>
+                Sales Tracking
+            </a>
+        </nav>
+
+        <div class="p-4 border-t border-gray-800">
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center text-xs font-bold">JD</div>
+                <div class="text-sm">
+                    <p class="font-medium">Jane Doe</p>
+                    <p class="text-slate-500 text-xs">Admin</p>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="flex-1 overflow-y-auto">
+        <header class="bg-white border-b border-gray-200 sticky top-0 z-10">
+            <div class="px-8 py-4 flex justify-between items-center">
+                <h2 class="text-xl font-bold text-slate-900">
+                    {% block title %}{% endblock %}
+                </h2>
+                <a href="{{ url_for('add_customer') }}" class="bg-[#4f46e5] hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors shadow-sm">
+                    <i data-lucide="plus" class="w-4 h-4"></i>
+                    Add Customer
+                </a>
+            </div>
+        </header>
+
+        <div class="p-8">
+            <!-- Flash Messages -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+              {% if messages %}
+                <div class="mb-6 space-y-2">
+                  {% for category, message in messages %}
+                    <div class="p-4 rounded-lg {{ 'bg-emerald-50 text-emerald-700 border border-emerald-200' if category == 'success' else 'bg-red-50 text-red-700 border border-red-200' }} flex items-center gap-3">
+                        <i data-lucide="{{ 'check-circle' if category == 'success' else 'alert-circle' }}" class="w-5 h-5"></i>
+                        {{ message }}
+                    </div>
+                  {% endfor %}
+                </div>
+              {% endif %}
+            {% endwith %}
+
+            {% block content %}{% endblock %}
+        </div>
+    </main>
+
+    <!-- Initialize Icons -->
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+</html>

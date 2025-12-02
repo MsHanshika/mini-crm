@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mini CRM</title>
+</head>
+<body>
+{% extends "base.html" %}
+
+{% block title %}Customers{% endblock %}
+
+{% block content %}
+    <!-- FILTERS -->
+    <div class="flex gap-3 mb-6">
+        <div class="relative flex-1">
+            <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"></i>
+            <input type="text" placeholder="Search customers..." class="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm">
+        </div>
+        <select class="px-4 py-2 rounded-lg border border-gray-300 bg-white text-sm text-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            <option>All Status</option>
+            <option>Active</option>
+            <option>Inactive</option>
+        </select>
+        <button class="px-4 py-2 rounded-lg border border-gray-300 bg-white text-sm font-medium text-slate-600 hover:bg-gray-50">
+            Search
+        </button>
+        <div class="flex items-center px-2 text-sm text-slate-500 font-medium">
+            {{ customers|length }} customers
+        </div>
+    </div>
+
+    <!-- CONTENT AREA -->
+    <div class="bg-white rounded-xl border border-gray-200 shadow-sm min-h-[500px] flex flex-col">
+        {% if customers %}
+             <div class="overflow-x-auto">
+                <table class="w-full text-left">
+                    <thead>
+                        <tr class="border-b border-gray-100 text-xs uppercase text-gray-500 font-semibold bg-gray-50/50">
+                            <th class="px-6 py-4">Name</th>
+                            <th class="px-6 py-4">Company</th>
+                            <th class="px-6 py-4">Status</th>
+                            <th class="px-6 py-4">Email</th>
+                            <th class="px-6 py-4 text-right">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100">
+                        {% for c in customers %}
+                        <tr class="hover:bg-gray-50/50 transition-colors group">
+                            <td class="px-6 py-4">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-8 h-8 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-xs font-bold">
+                                        {{ c.name[:2].upper() }}
+                                    </div>
+                                    <span class="font-medium text-slate-900">{{ c.name }}</span>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 text-sm text-slate-600">{{ c.company }}</td>
+                            <td class="px-6 py-4">
+                                <span class="px-2.5 py-1 rounded-full text-xs font-medium {{ 'bg-emerald-100 text-emerald-700' if c.status == 'Active' else 'bg-gray-100 text-slate-600' }}">
+                                    {{ c.status }}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 text-sm text-slate-500">{{ c.email }}</td>
+                            <td class="px-6 py-4 text-right">
+                                <button class="text-gray-400 hover:text-indigo-600 transition-colors">
+                                    <i data-lucide="more-horizontal" class="w-4 h-4"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+             </div>
+        {% else %}
+            <!-- EMPTY STATE -->
+            <div class="flex-1 flex flex-col items-center justify-center p-8 text-center">
+                <div class="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4">
+                    <i data-lucide="user" class="w-8 h-8 text-gray-300"></i>
+                </div>
+                <h4 class="text-lg font-bold text-slate-900 mb-2">No customers yet</h4>
+                <p class="text-slate-500 max-w-sm mb-8">Start building your customer relationships by adding your first customer.</p>
+                <a href="{{ url_for('add_customer') }}" class="bg-[#4f46e5] hover:bg-indigo-700 text-white px-6 py-2.5 rounded-lg font-medium transition-colors shadow-sm">
+                    Add Your First Customer
+                </a>
+            </div>
+        {% endif %}
+    </div>
+{% endblock %}
+</body>
+</html>
