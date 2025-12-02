@@ -93,18 +93,6 @@ def add_sale():
 
 @app.route('/add', methods=['GET', 'POST'])
 def add_customer():
-    # Retrieve pre-filled data if available from image scan
-    prefill_param = request.args.get('prefill', '{}')
-    
-    prefill_data = {}
-    if prefill_param:
-        try:
-            # We expect a JSON string, so we must parse it
-            prefill_data = json.loads(prefill_param)
-        except json.JSONDecodeError:
-            print(f"Error decoding JSON prefill data: {prefill_param}")
-            flash('Failed to process image data. Please enter details manually.', 'error')
-
     if request.method == 'POST':
         new_customer = {
             'name': request.form.get('name'),
@@ -118,44 +106,10 @@ def add_customer():
         flash('Customer added successfully!', 'success')
         return redirect(url_for('customers_list'))
     
-    # Render form, passing prefill data
-    return render_template('add_customer.html', active_page='customers', prefill=prefill_data)
+    # Render form without prefill logic
+    return render_template('add_customer.html', active_page='customers')
 
-@app.route('/upload-scan', methods=['POST'])
-def upload_scan():
-    if 'file' not in request.files:
-        flash('No file part', 'error')
-        return redirect(url_for('add_customer'))
-    
-    file = request.files['file']
-    if file.filename == '':
-        flash('No selected file', 'error')
-        return redirect(url_for('add_customer'))
-        
-    if file and allowed_file(file.filename):
-        # In a real application, you would send the file to an OCR service here.
-        # For this demo, we save it (optional) and provide mock extracted data.
-        filename = secure_filename(file.filename)
-        file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-        file.save(file_path)
-        
-        # ---------------------------------------------------------
-        # MOCK OCR LOGIC (SIMULATION)
-        # ---------------------------------------------------------
-        extracted_data = {
-            'name': 'Extracted Contact Name', 
-            'company': 'Mock Solutions Inc.', 
-            'email': 'contact@mocksolutions.com',
-            'status': 'Active'
-        }
-        
-        flash('Image scanned and details extracted successfully!', 'success')
-        
-        # Pass extracted data back to the add_customer route as a JSON string
-        return redirect(url_for('add_customer', prefill=json.dumps(extracted_data)))
 
-    flash('Invalid file type. Only PNG, JPG, JPEG are allowed.', 'error')
-    return redirect(url_for('add_customer'))
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
