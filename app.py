@@ -1,57 +1,70 @@
 import datetime
 import os
-import json
-from werkzeug.utils import secure_filename
 from flask import Flask, render_template, request, redirect, url_for, flash
+from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import or_
 
 app = Flask(__name__)
-# IMPORTANT: Set a secret key for session management and flashing messages
-app.secret_key = 'mini-crm-secret-key-123'  
-
-# Configuration for file uploads
-UPLOAD_FOLDER = 'static/uploads'
-ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-
-# Ensure upload directory exists
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+app.secret_key = 'mini-crm-secret-key-123'
 
 # -----------------------------------------------------------------------------
-# MOCK DATA STORE
+# DATABASE CONFIGURATION
 # -----------------------------------------------------------------------------
-customers = [
-    {'name': 'Alice Smith', 'company': 'Tech Corp', 'email': 'alice@tech.com', 'status': 'Active', 'date': datetime.datetime.now(), 'id': 1},
-    {'name': 'Bob Jones', 'company': 'Design Co', 'email': 'bob@design.com', 'status': 'Inactive', 'date': datetime.datetime.now(), 'id': 2}
-]
+# This creates a file named 'crm.db' in an 'instance' folder
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///crm.db'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-sales = [
-    {'id': 101, 'customer': 'Alice Smith', 'amount': 1200.00, 'status': 'Completed', 'date': '2023-10-25'},
-    {'id': 102, 'customer': 'Bob Jones', 'amount': 450.50, 'status': 'Pending', 'date': '2023-10-28'},
-    {'id': 103, 'customer': 'Alice Smith', 'amount': 3000.00, 'status': 'Completed', 'date': '2023-11-01'},
-]
+db = SQLAlchemy(app)
+
+# -----------------------------------------------------------------------------
+# DATABASE MODELS (Tables)
+# -----------------------------------------------------------------------------
+class Customer(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    company = db.Column(db.String(100))
+    email = db.Column(db.String(100), nullable=False)
+    status = db.Column(db.String(20), default='Active')
+    phone = db.Column(db.String(20))
+    date_joined = db.Column(db.DateTime, default=datetime.datetime.now)
+
+class Sale(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    customer_name = db.Column(db.String(100), nullable=False) # Storing name for simplicity
+    amount = db.Column(db.Float, nullable=False)
+    status = db.Column(db.String(20), default='Pending')
+    date = db.Column(db.DateTime, default=datetime.datetime.now)
+
+# Create the database tables if they don't exist
+with app.app_context():
+    db.create_all()
 
 # -----------------------------------------------------------------------------
 # HELPERS
 # -----------------------------------------------------------------------------
 def get_stats():
-    total_customers = len(customers)
-    active_customers = len([c for c in customers if c['status'] == 'Active'])
-    total_revenue = sum(s['amount'] for s in sales if s['status'] == 'Completed')
-    pending_sales_value = sum(s['amount'] for s in sales if s['status'] == 'Pending')
+    # Query the database for counts and sums
+    total_customers = Customer.query.count()
+    active_customers = Customer.query.filter_by(status='Active').count()
     
-    # Mock "New This Week" logic
-    new_this_week = len(customers) 
+    # Calculate revenue (completed sales)
+    completed_sales = Sale.query.filter_by(status='Completed').all()
+    total_revenue = sum(sale.amount for sale in completed_sales)
+    
+    # Calculate pending value
+    pending_sales = Sale.query.filter_by(status='Pending').all()
+    pending_value = sum(sale.amount for sale in pending_sales)
+    
+    # Mock "New This Week" (for now, just returns total to keep it simple)
+    new_this_week = total_customers 
 
     return {
         "total": total_customers,
         "active": active_customers,
         "new": new_this_week,
         "revenue": total_revenue,
-        "pending_value": pending_sales_value
+        "pending_value": pending_value
     }
-
-def allowed_file(filename):
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 # -----------------------------------------------------------------------------
 # ROUTES
@@ -59,57 +72,82 @@ def allowed_file(filename):
 
 @app.route('/')
 def dashboard():
-    return render_template('dashboard.html', active_page='dashboard', stats=get_stats(), customers=customers)
+    # Fetch recent customers (limit 5)
+    recent_customers = Customer.query.order_by(Customer.id.desc()).limit(5).all()
+    return render_template('dashboard.html', active_page='dashboard', stats=get_stats(), customers=recent_customers)
 
 @app.route('/customers')
 def customers_list():
-    return render_template('customers.html', active_page='customers', customers=customers)
+    # Get the search query from the URL (e.g., ?search=John)
+    search_query = request.args.get('search')
+    
+    # Start with a base query
+    query = Customer.query
 
+    # If a search term exists, filter the results
+    if search_query:
+        # ilike is case-insensitive (e.g., "tech" matches "Tech Corp")
+        query = query.filter(or_(
+            Customer.name.ilike(f'%{search_query}%'),
+            Customer.company.ilike(f'%{search_query}%'),
+            Customer.email.ilike(f'%{search_query}%')
+        ))
+    
+    # Execute the query
+    customers = query.order_by(Customer.id.desc()).all()
+    
+    return render_template('customers.html', active_page='customers', customers=customers)
 @app.route('/sales')
 def sales_tracking():
-    # Pass all customers to the template so the modal form can list them
-    return render_template('sales.html', active_page='sales', sales=sales, 
+    # Fetch all sales and all customers (for the dropdown)
+    all_sales = Sale.query.order_by(Sale.date.desc()).all()
+    all_customers = Customer.query.order_by(Customer.name).all()
+    
+    # Format dates for display (optional, but makes it look nice)
+    for sale in all_sales:
+        # We add a temporary attribute 'formatted_date' or just replace the string in the template
+        # For simplicity, the template expects a string or object. 
+        # The datetime object works fine, but we can format it in Jinja or here.
+        pass
+
+    return render_template('sales.html', active_page='sales', sales=all_sales, 
                            total_sales=get_stats()['revenue'], 
                            pending_sales=get_stats()['pending_value'],
-                           all_customers=customers)
+                           all_customers=all_customers)
 
 @app.route('/add-sale', methods=['POST'])
 def add_sale():
     try:
-        new_sale = {
-            'id': max(s['id'] for s in sales) + 1 if sales else 101,
-            'customer': request.form.get('customer_name'),
-            'amount': float(request.form.get('amount')),
-            'status': request.form.get('status'),
-            'date': datetime.datetime.now().strftime('%Y-%m-%d')
-        }
-        sales.insert(0, new_sale)
-        flash(f'Sale of ${new_sale["amount"]:.2f} logged for {new_sale["customer"]}.', 'success')
+        new_sale = Sale(
+            customer_name=request.form.get('customer_name'),
+            amount=float(request.form.get('amount')),
+            status=request.form.get('status'),
+            date=datetime.datetime.now()
+        )
+        db.session.add(new_sale)
+        db.session.commit()
+        flash(f'Sale of ${new_sale.amount:.2f} logged for {new_sale.customer_name}.', 'success')
     except Exception as e:
-        flash(f'Error logging sale: Please ensure amount is a valid number. ({e})', 'error')
+        flash(f'Error logging sale: {e}', 'error')
         
     return redirect(url_for('sales_tracking'))
-
 
 @app.route('/add', methods=['GET', 'POST'])
 def add_customer():
     if request.method == 'POST':
-        new_customer = {
-            'name': request.form.get('name'),
-            'company': request.form.get('company'),
-            'email': request.form.get('email'),
-            'status': request.form.get('status'),
-            'date': datetime.datetime.now(),
-            'id': len(customers) + 1
-        }
-        customers.insert(0, new_customer)
+        new_customer = Customer(
+            name=request.form.get('name'),
+            company=request.form.get('company'),
+            email=request.form.get('email'),
+            status=request.form.get('status'),
+            phone=request.form.get('phone')
+        )
+        db.session.add(new_customer)
+        db.session.commit()
         flash('Customer added successfully!', 'success')
         return redirect(url_for('customers_list'))
     
-    # Render form without prefill logic
     return render_template('add_customer.html', active_page='customers')
-
-
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
