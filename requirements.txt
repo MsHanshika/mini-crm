@@ -1,2 +1,3 @@
 Flask
+flask_sqlalchemy
 gunicorn # Used as the production-ready WSGI server
