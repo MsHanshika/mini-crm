@@ -89,16 +89,6 @@ def customers_list():
     
     return render_template('customers.html', active_page='customers', customers=customers)
 
-@app.route('/delete/<int:id>', methods=['POST'])
-def delete_customer(id):
-    customer = Customer.query.get_or_404(id)
-    try:
-        db.session.delete(customer)
-        db.session.commit()
-        flash('Customer deleted successfully!', 'success')
-    except Exception as e:
-        flash(f'Error deleting customer: {e}', 'error')
-    return redirect(url_for('customers_list'))
 
 @app.route('/sales')
 def sales_tracking():
@@ -149,6 +139,17 @@ def add_customer():
         return redirect(url_for('customers_list'))
     
     return render_template('add_customer.html', active_page='customers')
+
+@app.route('/delete/<int:id>', methods=['POST'])
+def delete_customer(id):
+    customer = Customer.query.get_or_404(id)
+    try:
+        db.session.delete(customer)
+        db.session.commit()
+        flash('Customer deleted successfully!', 'success')
+    except Exception as e:
+        flash(f'Error deleting customer: {e}', 'error')
+    return redirect(url_for('customers_list'))
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
